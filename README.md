@@ -1,6 +1,4 @@
 # OpenGl
-Optional description
+Original description
 Local test
-## Dependencies:
- [GLEW](https://github.com/nigels-com/glew)
 
