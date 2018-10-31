@@ -12,7 +12,7 @@ class camera{
     //camera movement
     private:
         //default position and view and up vectors
-        glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  1.0f);
+        glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  5.0f);
         glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
         glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
         bool firstMove = true;
@@ -40,7 +40,7 @@ class camera{
             }
         }
         //get complete view matrix
-        const glm::mat4 view(){return glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);}
+        const glm::mat4 view() const {return glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);}
         
 };
 

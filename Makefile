@@ -4,7 +4,7 @@ root_source_dir    		:= scr
 source_subdirs    		:= .
 compile_flags      		:= -Wall -MD -pipe 
 link_flags          	:=
-libraries           	:= -lglfw3  -lpthread -lX11 -ldl -lstdc++fs
+libraries           	:= -lglfw3 -lpthread -lX11 -ldl -lstdc++fs -march=native
 relative_include_dirs   := $(addprefix ../../, $(root_include_dir))
 relative_source_dirs  	:= $(addprefix ../../$(root_source_dir)/, $(source_subdirs))
 objects_dirs            := $(addprefix $(root_source_dir)/, $(source_subdirs))

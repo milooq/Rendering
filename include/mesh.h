@@ -6,11 +6,12 @@ class mesh{
     protected:
         //buffers
         GLuint VBO,VAO,EBI;
-        //indicies array size
-        GLuint size;
         //primitive type
         GLenum typeprim;
     public:
+        //indicies array size 
+        GLuint size;
+
         //mesh constructor
         mesh(const std::vector<GLdouble>& pVertices,const std::vector<GLuint>& pIndices,const GLenum& pItypeprim);
 
@@ -22,12 +23,21 @@ class mesh{
             glDeleteVertexArrays(1,&VAO);
         }
 
+        void update(const std::vector<GLuint>& pIndices){
+
+            glBindVertexArray(VAO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, pIndices.size() * sizeof(GLuint), &pIndices[0], GL_DYNAMIC_DRAW);
+            glBindVertexArray(0);
+
+            size = pIndices.size();
+        }
+
         //draw function
         void draw(void);     
 };
 
 mesh::mesh(const std::vector<GLdouble>& pVertices, const std::vector<GLuint>& pIndices, const GLenum& pItypeprim): 
-size(pIndices.size()), typeprim(pItypeprim) {
+ typeprim(pItypeprim), size(pIndices.size()) {
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -41,7 +51,7 @@ size(pIndices.size()), typeprim(pItypeprim) {
 
         glGenBuffers(1, &EBI);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBI);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, pIndices.size() * sizeof(GLuint), &pIndices[0], GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, pIndices.size() * sizeof(GLuint), &pIndices[0], GL_DYNAMIC_DRAW);
     
     glBindVertexArray(0);
 };

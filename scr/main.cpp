@@ -34,7 +34,7 @@ void GLAPIENTRY
 MessageCallback( GLenum source,GLenum type,GLuint id,GLenum severity,
 GLsizei length,const GLchar* message,const void* userParam );
 
-const GLuint WIDTH = 900, HEIGHT = 900;
+const GLuint WIDTH = 1080, HEIGHT = 1080;
 //make camera global to init it in mouse callback
 camera myCamera;
 
@@ -46,6 +46,10 @@ GLfloat lastFrame = 0.0f;
     bool keys[1024];
     //last mouse positions
     glm::vec2 mouseScreenPos;
+
+enum drawType {DOTBYDOT=0, D_CURVES, C_CURVES };
+drawType currentDrawType = drawType::C_CURVES;
+bool fillFlag = 1;
 
 int main()
 {   
@@ -102,7 +106,7 @@ int main()
         }
     }
     // fill indicesBuffer simply with natural number till a third of verticesBuffer size
-    for(GLuint i = 0; i<verticesBuffer[0].size()/3; i++){
+    for(GLuint i = 0; i < filenames.size(); i++) {
         indicesBuffer.push_back(i);
     };
 
@@ -158,54 +162,6 @@ int main()
         meshes.emplace_back(mesh(verticesBuffer[it],indicesBuffer,GL_POINTS));
     }
 
-    std::vector<GLdouble> vert = {
-        -1.0f,-1.0f,-1.0f,
-        -1.0f,-1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f,-1.0f,
-        -1.0f,-1.0f,-1.0f,
-        -1.0f, 1.0f,-1.0f,
-        1.0f,-1.0f, 1.0f,
-        -1.0f,-1.0f,-1.0f,
-        1.0f,-1.0f,-1.0f,
-        1.0f, 1.0f,-1.0f,
-        1.0f,-1.0f,-1.0f,
-        -1.0f,-1.0f,-1.0f,
-        -1.0f,-1.0f,-1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f,-1.0f,
-        1.0f,-1.0f, 1.0f,
-        -1.0f,-1.0f, 1.0f,
-        -1.0f,-1.0f,-1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f,-1.0f, 1.0f,
-        1.0f,-1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f,-1.0f,-1.0f,
-        1.0f, 1.0f,-1.0f,
-        1.0f,-1.0f,-1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f,-1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f,-1.0f,
-        -1.0f, 1.0f,-1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f,-1.0f,
-        -1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        1.0f,-1.0f, 1.0f
-    };
-
-    std::vector<GLuint> ind;
-    GLuint indC = 0;
-    for(auto x:vert){ 
-    ind.push_back(indC);
-    ++indC;
-    }
-
-    mesh cube(vert,ind,GL_TRIANGLES);
-
     axis axises(1000.0f);
 
     shader myShader("../res/vertex.vs","../res/fragment.frag");
@@ -225,15 +181,58 @@ int main()
         colors.push_back(0.5+sin(rand())/2);
     }
     
+    GLuint iter = 0;
+    GLfloat lastDraw = 0;
     // Game loop
-    while (!glfwWindowShouldClose(window))
-    {    
+    while (!glfwWindowShouldClose(window)) {   
+
+
         //  check if any events have been activated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
-        // doMove();
+
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+
+        if( (currentFrame - lastDraw) >= 1e-6) {
+            lastDraw = currentFrame;
+
+            switch(currentDrawType){
+                case drawType::DOTBYDOT :
+                    for(auto& x: meshes){
+                    x.update(std::vector<GLuint>{iter});
+                    }
+                break;
+                
+                default :
+                    //prepare for next 2 drawing types
+                    if( meshes[0].size < filenames.size() && fillFlag == 1) {
+                        for(auto& x: meshes){
+                            x.update(indicesBuffer); 
+                        }
+                        fillFlag = 0;
+                    }
+
+                    switch(currentDrawType){
+
+                        case drawType::D_CURVES :
+                            for(auto& x: meshes){
+                                x.size=iter;
+                            }
+                        break;
+
+                        case drawType::C_CURVES :
+                            for(auto& x: meshes){
+                                x.size=filenames.size();
+                            }
+                        break;
+                    }
+                break;
+
+                }
+            if(++iter > filenames.size())
+                iter = 0;
+        }
 
         myCamera.move(keys,deltaTime);
         myCamera.rotate(mouseScreenPos.x,mouseScreenPos.y);
@@ -249,17 +248,14 @@ int main()
             glUniform3f(FlagID,colors[3*i],colors[3*i+1],colors[3*i+2]);
             meshes[i].draw();
         }
-        glUniform3f(FlagID,1.0f,1.0f,1.0f);
-        cube.draw();
         axises.draw(myShader.program,"clr");
-        glfwSwapBuffers(window);
 
+        glfwSwapBuffers(window);
     }
 
     // free resources
     myShader.clear();
 
-    cube.clear();
     axises.clear();
     for(auto x: meshes){
         x.clear();
@@ -279,14 +275,36 @@ void GLAPIENTRY MessageCallback( GLenum source, GLenum type, GLuint id, GLenum s
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
-    if (keys[GLFW_KEY_ESCAPE])
-        glfwSetWindowShouldClose(window, GL_TRUE);
-
     //set key status pressed if it is
     if(action == GLFW_PRESS)
         keys[key] = true;
     else if(action == GLFW_RELEASE)
         keys[key] = false;
+
+    if (keys[GLFW_KEY_ESCAPE])
+        glfwSetWindowShouldClose(window, GL_TRUE);
+
+    if(key==GLFW_KEY_M && action==GLFW_RELEASE){
+        currentDrawType = static_cast<drawType>( (currentDrawType + 1) % 3 );
+        switch(currentDrawType){
+            case drawType::DOTBYDOT :
+                fillFlag = 0;
+                std::cout<<"Drawing point by point"<<std::endl;
+            break;
+
+            case drawType::C_CURVES :
+                fillFlag = 1;
+                std::cout<<"Drawing full curve"<<std::endl;
+            break;
+
+            case drawType::D_CURVES :
+                fillFlag = 1;
+                std::cout<<"Drawing curve in real time"<<std::endl;
+            break;
+        }
+    }
+    
+
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
